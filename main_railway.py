@@ -137,16 +137,17 @@ class TelegramBot:
                             [{"text": "📩 REGISTRASI / INFO JOIN", "url": REGISTRATION_URL}],
                 [{"text": "✅ CHECK ACCESS", "callback_data": callback_data}],
             ]
-                        else:
+                            else:
             keyboard.extend(
                 [
                     [{"text": "📩 REGISTRASI / INFO JOIN", "url": REGISTRATION_URL}],
                     [{"text": "✅ CHECK ACCESS", "callback_data": callback_data}],
                 ]
             )
+
+        return {
             "inline_keyboard": keyboard
         }
-
     @staticmethod
     def open_video_keyboard(video_code: str) -> dict[str, list[list[dict[str, str]]]]:
         return {
