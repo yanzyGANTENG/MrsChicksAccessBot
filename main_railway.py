@@ -118,35 +118,31 @@ class TelegramBot:
     def telegram(self, path: str, payload: dict[str, Any] | None = None) -> Any:
         return self.bridge.request(path, payload)
 
-    @staticmethod
-    def access_keyboard(video_code: str | None = None) -> dict[str, list[list[dict[str, str]]]]:
+        @staticmethod
+    def access_keyboard(
+        video_code: str | None = None,
+    ) -> dict[str, list[list[dict[str, str]]]]:
         callback_data = CHECK_ACCESS_CALLBACK
+
         if video_code is not None:
             callback_data = f"{CHECK_ACCESS_CALLBACK}:{video_code}"
-        keyboard: list[list[dict[str, str]]] = []
-        if video_code is not None:
-            keyboard.extend(
-                [
-                    [{"text": "📩 REGISTRASI / INFO JOIN", "url": REGISTRATION_URL}],
-                    [{"text": "✅ CHECK ACCESS", "callback_data": callback_data}],
-                ]
-            )
-        else:
-            keyboard.extend(
-                [
-                            [{"text": "📩 REGISTRASI / INFO JOIN", "url": REGISTRATION_URL}],
-                [{"text": "✅ CHECK ACCESS", "callback_data": callback_data}],
-            ]
-                            else:
-            keyboard.extend(
-                [
-                    [{"text": "📩 REGISTRASI / INFO JOIN", "url": REGISTRATION_URL}],
-                    [{"text": "✅ CHECK ACCESS", "callback_data": callback_data}],
-                ]
-            )
 
-        return {
-            "inline_keyboard": keyboard
+        keyboard = [
+            [
+                {
+                    "text": "📩 REGISTRASI / INFO JOIN",
+                    "url": REGISTRATION_URL,
+                }
+            ],
+            [
+                {
+                    "text": "✅ CHECK ACCESS",
+                    "callback_data": callback_data,
+                }
+            ],
+        ]
+
+        return {"inline_keyboard": keyboard}
         }
     @staticmethod
     def open_video_keyboard(video_code: str) -> dict[str, list[list[dict[str, str]]]]:
