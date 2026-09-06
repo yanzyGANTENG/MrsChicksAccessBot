@@ -134,7 +134,7 @@ class TelegramBot:
         else:
             keyboard.extend(
                 [
-                    [{"text": "🔓 JOIN CHANNEL", "url": INVITE_LINK}],
+                    [{"text": [{"text": "📩 REGISTRASI / INFO JOIN", "url": REGISTRATION_URL}],
                     [{"text": "✅ CHECK ACCESS", "callback_data": callback_data}],
                 ]
             )
