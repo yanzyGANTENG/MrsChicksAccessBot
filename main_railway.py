@@ -118,7 +118,7 @@ class TelegramBot:
     def telegram(self, path: str, payload: dict[str, Any] | None = None) -> Any:
         return self.bridge.request(path, payload)
 
-        @staticmethod
+    @staticmethod
     def access_keyboard(
         video_code: str | None = None,
     ) -> dict[str, list[list[dict[str, str]]]]:
@@ -143,10 +143,6 @@ class TelegramBot:
         ]
 
         return {"inline_keyboard": keyboard}
-        }
-    @staticmethod
-    def open_video_keyboard(video_code: str) -> dict[str, list[list[dict[str, str]]]]:
-        return {
             "inline_keyboard": [
                 [
                     {
