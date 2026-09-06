@@ -14,6 +14,8 @@ import signal
 import subprocess
 import sys
 import time
+import urllib.error
+import urllib.request
 from dataclasses import dataclass
 from typing import Any
 
@@ -42,73 +44,59 @@ VIDEO_CODES: dict[str, dict[str, str]] = {
 class TelegramError(RuntimeError):
     """Raised when Telegram or the connector bridge reports an error."""
 
-
-@dataclass
 class ConnectorBridge:
-    """Talk to the Node connector bridge over newline-delimited JSON."""
-
-    process: subprocess.Popen[str]
+    def __init__(self, bot_token: str) -> None:
+        self.base_url = f"https://api.telegram.org/bot{bot_token}"
 
     @classmethod
     def start(cls) -> "ConnectorBridge":
-        process = subprocess.Popen(
-            ["node", "telegram_connector_proxy.mjs"],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=None,
-            text=True,
-            bufsize=1,
+        bot_token = os.environ.get("BOT_TOKEN", "").strip()
+        if not bot_token:
+            raise TelegramError("BOT_TOKEN is not configured.")
+        return cls(bot_token)
+
+    def request(
+        self,
+        path: str,
+        payload: dict[str, Any] | None = None,
+    ) -> Any:
+        request = urllib.request.Request(
+            f"{self.base_url}{path}",
+            data=json.dumps(payload or {}).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
         )
-        return cls(process)
-
-    def request(self, path: str, payload: dict[str, Any] | None = None) -> dict[str, Any]:
-        if self.process.stdin is None or self.process.stdout is None:
-            raise TelegramError("Connector bridge streams are unavailable.")
-
-        request = {"path": path, "method": "POST", "body": payload or {}}
-        self.process.stdin.write(json.dumps(request) + "\n")
-        self.process.stdin.flush()
-
-        line = self.process.stdout.readline()
-        if not line:
-            raise TelegramError("Connector bridge stopped unexpectedly.")
 
         try:
-            response = json.loads(line)
-        except json.JSONDecodeError as error:
-            raise TelegramError("Connector bridge returned invalid JSON.") from error
-
-        if not response.get("ok"):
-            details = response.get("error", "Unknown connector error")
-            raise TelegramError(str(details))
-
-        telegram_response = response.get("data")
-        if not isinstance(telegram_response, dict) or not telegram_response.get("ok"):
-            if isinstance(telegram_response, dict):
-                error_code = telegram_response.get("error_code", "unknown")
-                description = telegram_response.get("description", "missing")
-                response_keys = ",".join(sorted(telegram_response))
-                raise TelegramError(
-                    "Telegram API error "
-                    f"(http_status={response.get('status', 'unknown')}, "
-                    f"error_code={error_code}, description={description}, "
-                    f"response_keys={response_keys or 'none'})"
-                )
+            with urllib.request.urlopen(request, timeout=35) as response:
+                data = json.loads(response.read().decode("utf-8"))
+        except urllib.error.HTTPError as error:
+            raw = error.read().decode("utf-8", errors="replace")
+            try:
+                error_data = json.loads(raw)
+                description = error_data.get("description", raw)
+            except json.JSONDecodeError:
+                description = raw
             raise TelegramError(
-                "Telegram returned an invalid response "
-                f"(http_status={response.get('status', 'unknown')})."
-            )
+                f"Telegram API error: {description}"
+            ) from error
+        except Exception as error:
+            raise TelegramError(
+                f"Telegram request failed: {error}"
+            ) from error
 
-        return telegram_response.get("result")
+        if not isinstance(data, dict) or not data.get("ok"):
+            description = (
+                data.get("description", "Unknown Telegram error")
+                if isinstance(data, dict)
+                else "Invalid Telegram response"
+            )
+            raise TelegramError(str(description))
+
+        return data.get("result")
 
     def close(self) -> None:
-        if self.process.stdin is not None:
-            self.process.stdin.close()
-        if self.process.poll() is None:
-            self.process.terminate()
-            self.process.wait(timeout=5)
-
-
+        pass
 class TelegramBot:
     """Telegram membership gate with join and access-check actions."""
 
