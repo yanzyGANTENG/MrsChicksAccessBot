@@ -134,11 +134,16 @@ class TelegramBot:
         else:
             keyboard.extend(
                 [
-                    [{"text": [{"text": "📩 REGISTRASI / INFO JOIN", "url": REGISTRATION_URL}],
+                            [{"text": "📩 REGISTRASI / INFO JOIN", "url": REGISTRATION_URL}],
+                [{"text": "✅ CHECK ACCESS", "callback_data": callback_data}],
+            ]
+                        else:
+            keyboard.extend(
+                [
+                    [{"text": "📩 REGISTRASI / INFO JOIN", "url": REGISTRATION_URL}],
                     [{"text": "✅ CHECK ACCESS", "callback_data": callback_data}],
                 ]
             )
-        return {
             "inline_keyboard": keyboard
         }
 
